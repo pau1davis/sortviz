@@ -8,7 +8,7 @@ Supported algorithms:
 - `merge`
 - `quick`
 
-Each step is rendered as a row of indexed squares (inspired by `tests/square.jgr`) with highlight colors:
+Each step is rendered as a row of indexed squares with highlight colors:
 
 - **Yellow**: compared indices
 - **Pink**: value moving from this index
