@@ -1,4 +1,4 @@
-# myJgraph Sorting Visualizer
+# Sorting Visualizer (sortviz)
 
 This project generates step-by-step sorting visualizations as `jgraph` files, then converts them to PostScript and PDF.
 
