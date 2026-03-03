@@ -62,6 +62,32 @@ bool commandExists(const string& name) {
 	return system(check.c_str()) == 0;
 }
 
+// resolves which jgraph executable to use
+string resolveJgraphCommand() {
+	vector<string> candidates;
+
+	if (const char* envJgraph = getenv("JGRAPH")) {
+		string value(envJgraph);
+		if (!value.empty()) {
+			candidates.push_back(value);
+		}
+	}
+
+	candidates.push_back("/home/jplank/bin/LINUX-X86_64/jgraph");
+	if (filesystem::exists("./jgraph")) {
+		candidates.push_back("./jgraph");
+	}
+	candidates.push_back("jgraph");
+
+	for (const auto& candidate : candidates) {
+		if (commandExists(candidate)) {
+			return candidate;
+		}
+	}
+
+	return "";
+}
+
 // parses command line data from space-separated and/or comma-separated args
 vector<int> parseValues(int argc, char* argv[]) {
 	if (argc < 4) {
@@ -310,19 +336,13 @@ string toJgraph(const SortStep& step, const string& sortType) {
 	int n = static_cast<int>(step.values.size());
 	int xMax = max(1, n);
 
-	const double pageWidth = 8.5;
-	const double pageHeight = 11.0;
 	const double cellWidth = 0.8;
 	const double graphWidth = min(7.0, max(2.5, xMax * cellWidth));
 	const double graphHeight = 2.8;
-	const double xTranslate = max(0.5, (pageWidth - graphWidth) / 2.0);
-	const double yTranslate = max(0.5, (pageHeight - graphHeight) / 2.0);
 
 	ostringstream out;
 	out << "(* Auto-generated sort step graph *)\n\n";
 	out << "newgraph\n";
-	out << "x_translate " << fixed << setprecision(3) << xTranslate << "\n";
-	out << "y_translate " << fixed << setprecision(3) << yTranslate << "\n";
 	out << "xaxis min 0 max " << xMax << " size " << graphWidth << " nodraw\n";
 	out << "yaxis min 0 max 3 size " << graphHeight << " nodraw\n";
 	out << "newstring hjc x " << fixed << setprecision(3) << (xMax / 2.0)
@@ -419,12 +439,13 @@ int writeSteps(const filesystem::path& runDir, const string& sortType,
 
 // converts generated .jgr files to .ps, .pdf, and .jpg files
 void convertJgraphs(const filesystem::path& runDir) {
-	string jgraphCmd = filesystem::exists("./jgraph") ? "./jgraph" : "jgraph";
+	string jgraphCmd = resolveJgraphCommand();
 
-	if (!commandExists(jgraphCmd)) {
+	if (jgraphCmd.empty()) {
 		throw runtime_error(
-				"jgraph executable not found (expected ./jgraph or jgraph in "
-				"PATH).");
+				"jgraph executable not found (checked JGRAPH env var, "
+				"/home/jplank/bin/LINUX-X86_64/jgraph, ./jgraph, and PATH)."
+		);
 	}
 
 	bool hasPs2pdf = commandExists("ps2pdf");
